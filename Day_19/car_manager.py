@@ -2,6 +2,7 @@ from turtle import Turtle
 from typing import List
 import random
 
+
 TURTLE_MODEL = ['arrow', 'blank', 'circle', 'classic', 'square', 'triangle', 'turtle']
 COLORS = ["red", "orange", "yellow", "green", "blue", "purple"]
 STARTING_MOVE_DISTANCE = 5
@@ -11,6 +12,7 @@ class CarManager:
     
     def __init__(self):
         self.all_cars : List[Turtle] = []
+        self.car_speed = STARTING_MOVE_DISTANCE
     
     def create_cars(self):
         random_chance = random.randint(1, 6)
@@ -25,7 +27,7 @@ class CarManager:
 
     def move_cars(self):
         for car in self.all_cars:
-            car.backward(STARTING_MOVE_DISTANCE)
+            car.backward(self.car_speed)
 
     def level_up(self):
         self.car_speed += MOVE_INCREMENT
