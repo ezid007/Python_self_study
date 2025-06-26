@@ -2,6 +2,7 @@ from rich import print
 import csv
 import pandas as pd
 
+
 # 요청하신 대로 기존 데이터 스타일을 그대로 사용합니다.
 weather_data = [
     ['day', 'temp', 'condition'],
