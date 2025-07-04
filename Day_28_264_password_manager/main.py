@@ -1,8 +1,28 @@
-from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button
+from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 
 # ---------------------------- SAVE PASSWORD ------------------------------- #
+
+
+def save():
+    website = website_entry.get()
+    email = email_entry.get()
+    password = password_entry.get()
+
+    is_ok = messagebox.askokcancel(
+        website,
+        f"These are the details entered:\nEmail: {email}\nPassword: {password}\nIs it ok to save?",
+    )
+
+    if is_ok:
+        with open(
+            "self_study/Day_28_264_password_manager/data.txt", "a", encoding="utf-8"
+        ) as data_file:
+            data_file.write(f"{website} | {email} | {password}\n")
+            website_entry.delete(0, END)
+            password_entry.delete(0, END)
+
 
 # ---------------------------- UI SETUP ------------------------------- #
 
@@ -41,6 +61,7 @@ website_entry.focus()  # 프로그램 시작 시 커서를 여기에 둡니다.
 
 email_entry = Entry()
 email_entry.grid(row=2, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
+email_entry.insert(0, "asdf@gmail.com")
 
 password_entry = Entry()
 # 1열에만 배치하고 가로로 채웁니다.
@@ -52,7 +73,7 @@ generate_password_button = Button(text="Generate Password")
 # 2열에 배치하고 가로로 채웁니다.
 generate_password_button.grid(row=3, column=2, sticky="ew", padx=(5, 0))
 
-add_button = Button(text="Add", width=36)
+add_button = Button(text="Add", width=36, command=save)
 # 1열과 2열을 병합하고 가로로 채웁니다.
 add_button.grid(row=4, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
 

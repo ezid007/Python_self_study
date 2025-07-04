@@ -4,8 +4,11 @@ Pomodoro Technique Timer
 작업, 짧은 휴식, 긴 휴식 사이클을 자동으로 관리하여 집중력 향상을 돕습니다.
 """
 
+import tkinter
 from tkinter import Tk, Canvas, PhotoImage, Label, Button
+from code_sound_and_img import play_sound_from_memory, stop_sound, img
 import math
+
 
 # ---------------------------- 상수 (CONSTANTS) ------------------------------- #
 # 상수는 프로그램 전체에서 변하지 않는 값을 저장하며, 대문자로 작성하는 것이 관례입니다.
@@ -33,6 +36,7 @@ def reset_timer():
     if timer:  # timer에 유효한 ID가 있을 때만 (타이머가 작동 중일 때만) 실행합니다.
         window.after_cancel(timer)
         timer = None  # 타이머를 취소했으므로 변수를 다시 None으로 설정합니다.
+    stop_sound()
 
     # UI를 초기 상태로 설정합니다.
     canvas.itemconfig(timer_text, text="00:00")  # 타이머 텍스트를 "00:00"으로 변경
@@ -57,16 +61,20 @@ def start_timer():
     # reps 값에 따라 어떤 세션을 시작할지 결정합니다.
     if reps % 8 == 0:  # 8번째 사이클 (4번째 휴식) -> 긴 휴식
         title_label.config(text="Break", fg=RED)
+        stop_sound()
         count_down(long_break_sec)
     elif reps % 2 == 0:  # 2, 4, 6번째 사이클 -> 짧은 휴식
         title_label.config(text="Break", fg=PINK)
+        stop_sound()
         count_down(short_break_sec)
     else:  # 1, 3, 5, 7번째 사이클 -> 작업
         # 작업 세션이 끝난 직후 (즉, 휴식이 시작될 때) 체크마크를 추가합니다.
+        title_label.config(text="Work", fg=GREEN)
+        play_sound_from_memory()
+
         if reps > 1:
             work_sessions = math.floor((reps - 1) / 2)
             check_marks.config(text="✔" * work_sessions)
-        title_label.config(text="Work", fg=GREEN)
         count_down(work_sec)
 
 
@@ -104,11 +112,10 @@ title_label.grid(column=1, row=0)  # grid는 위젯을 격자 형태로 배치�
 
 # 캔버스(Canvas) 위젯은 이미지나 도형, 텍스트를 그릴 때 사용합니다.
 canvas = Canvas(width=200, height=224, bg=YELLOW, highlightthickness=0)
-# PhotoImage로 이미지 파일을 불러옵니다. 스크립트와 같은 폴더에 tomato.png가 있어야 합니다.
-tomato_img = PhotoImage(
-    file="self_study\\Day_27_257_the_pomodoro_technique\\tomato.png"
-)
-canvas.create_image(100, 112, image=tomato_img)  # 캔버스 중앙에 이미지 생성
+
+photo = tkinter.PhotoImage(data=img())
+
+canvas.create_image(100, 112, image=photo)  # 캔버스 중앙에 이미지 생성
 # 캔버스 위에 텍스트 생성
 timer_text = canvas.create_text(
     100, 130, text="00:00", fill="white", font=(FONT_NAME, 35, "bold")
