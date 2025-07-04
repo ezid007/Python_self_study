@@ -14,7 +14,7 @@ window.config(padx=50, pady=50)
 
 
 canvas = Canvas(height=200, width=200, highlightthickness=0)
-logo_img = PhotoImage(file="self_study\\Day_28_264_password_manager\\logo.png")
+logo_img = PhotoImage(file="self_study/Day_28_264_password_manager/logo.png")
 canvas.create_image(100, 100, image=logo_img)
 # 로고 이미지를 0행 1열에 배치합니다.
 canvas.grid(
