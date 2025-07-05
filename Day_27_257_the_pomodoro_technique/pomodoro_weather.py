@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 
 # --- 외부 데이터 로드 ---
 try:
+    # 사용자 코드에 맞춰 TOMATO_ICO를 import 합니다.
     from code_data import IMG_DATA, SOUND_DATA, TOMATO_ICO
 except ImportError:
     messagebox.showerror(
@@ -33,11 +34,9 @@ SHORT_BREAK_MIN = 5
 LONG_BREAK_MIN = 20
 
 # --- 기상청 API 관련 상수 ---
-# 중요: 아래 'YOUR_KMA_API_KEY' 부분에 공공데이터포털에서 발급받은 본인의 인증키를 입력해야 합니다.
-# URL 인코딩된 키가 아닌, 일반 인증키(Decoding)를 사용하세요.
 KMA_API_KEY = "Qm%2BeM3tI2A%2FndGQSlFsYDJhFeHx7FfFLbfNGSRzxNzEtemy3O%2BK4pncX%2FbgykEhQEmr%2FLhQP7aLBXctq6vbznw%3D%3D"
 
-# 주요 도시 이름(ipinfo.io 결과)과 기상청 격자 좌표(X, Y) 매핑
+# 주요 도시 이름과 기상청 격자 좌표(X, Y) 매핑
 CITY_GRID_COORDS = {
     "Seoul": (60, 127),
     "Seongnam": (62, 123),
@@ -106,34 +105,51 @@ def get_city_from_ip():
         return "Seoul"
 
 
-def get_kma_weather(city):
-    """기상청 API로 현재 날씨 정보를 가져옵니다."""
+# --- [수정된 부분] ---
+def get_kma_weather(city: str):
+    """
+    [수정] 기상청 '초단기예보' API로 날씨 정보('맑음' 등)와 온도를 가져옵니다.
+    '초단기실황' 대신 '초단기예보'를 사용하여 하늘 상태 정보를 안정적으로 수신합니다.
+    """
     if KMA_API_KEY == "YOUR_KMA_API_KEY":
         return "API 키 필요"
 
     nx, ny = CITY_GRID_COORDS.get(city, CITY_GRID_COORDS["Seoul"])
 
-    now = datetime.now()
-    base_dt = now - timedelta(hours=1)
-    base_date = base_dt.strftime("%Y%m%d")
-    base_time = base_dt.strftime("%H00")
+    # 초단기예보는 매시 30분에 생성되므로, 안정적인 조회를 위해 1시간 전을 기준으로 조회
+    base_time_dt = datetime.now() - timedelta(hours=1)
+    base_date = base_time_dt.strftime("%Y%m%d")
+    base_time = base_time_dt.strftime("%H30")  # 예: 10시 -> 0930, 15시 -> 1430
 
+    # 'getUltraSrtNcst'(초단기실황) -> 'getUltraSrtFcst'(초단기예보)로 변경
     api_url = (
-        "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
-        f"?serviceKey={KMA_API_KEY}&pageNo=1&numOfRows=10&dataType=JSON"
+        "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst"
+        f"?serviceKey={KMA_API_KEY}&pageNo=1&numOfRows=60&dataType=JSON"
         f"&base_date={base_date}&base_time={base_time}&nx={nx}&ny={ny}"
     )
 
     try:
         response = requests.get(api_url, timeout=10)
         response.raise_for_status()
+
         items = response.json()["response"]["body"]["items"]["item"]
 
-        weather_data = {item["category"]: item["obsrValue"] for item in items}
+        # 예보 시간별로 데이터를 정리할 딕셔너리
+        forecast_data = {}
+        for item in items:
+            fcst_time = item["fcstTime"]
+            if fcst_time not in forecast_data:
+                forecast_data[fcst_time] = {}
+            forecast_data[fcst_time][item["category"]] = item["fcstValue"]
 
-        temp = f"{weather_data.get('T1H')}°C"
-        pty_code = weather_data.get("PTY", "0")
-        sky_code = weather_data.get("SKY", "0")
+        # 가장 빠른 예보 시간의 데이터를 사용
+        first_forecast_time = sorted(forecast_data.keys())[0]
+        weather = forecast_data[first_forecast_time]
+
+        # 날씨 정보 해석 (온도, 강수형태, 하늘상태)
+        temp = f"{weather.get('T1H')}°C"
+        pty_code = weather.get("PTY", "0")
+        sky_code = weather.get("SKY", "1")
 
         pty_map = {
             "0": "",
@@ -141,31 +157,22 @@ def get_kma_weather(city):
             "2": "비/눈",
             "3": "눈",
             "5": "빗방울",
-            "6": "빗방울/눈날림",
+            "6": "빗방울눈날림",
             "7": "눈날림",
         }
         sky_map = {"1": "맑음", "3": "구름많음", "4": "흐림"}
 
-        # --- [개선된 날씨 처리 로직] ---
-        sky_description = None
-        # 강수형태(PTY) 코드가 '0'(없음)이 아닌 경우, 강수 상태를 우선적으로 가져옵니다.
+        # 비/눈 정보가 있으면 우선 표시, 없으면 하늘 상태 표시
         if pty_code != "0":
-            sky_description = pty_map.get(pty_code)
-        # 강수가 없을 때만 하늘상태(SKY) 코드를 확인합니다.
+            weather_status = pty_map.get(pty_code, "정보없음")
         else:
-            sky_description = sky_map.get(sky_code)
+            weather_status = sky_map.get(sky_code, "정보없음")
 
-        # 최종 날씨 정보 문자열을 만듭니다. 정보가 없는 경우(None)는 제외합니다.
-        if sky_description:
-            return f"{sky_description} {temp}"
-        else:
-            # 하늘 정보가 없을 경우 온도만 표시합니다.
-            return temp
+        return f"{weather_status} {temp}"
 
-    except requests.exceptions.RequestException as e:
-        print(f"기상청 API 요청 오류: {e}")
+    except requests.exceptions.RequestException:
         return "날씨 로드 실패"
-    except (KeyError, TypeError):
+    except (KeyError, TypeError, IndexError):
         return "정보 파싱 오류"
 
 
@@ -192,9 +199,13 @@ def update_header_info():
 
 def update_current_time():
     """1초마다 현재 시간을 가져와 화면에 표시합니다."""
+    # 초(second) 정보는 제외하여 1분 단위로 업데이트하도록 변경
     time_string_ampm = time.strftime("%p %I:%M")
     korean_time_string = time_string_ampm.replace("AM", "오전").replace("PM", "오후")
-    current_time_label.config(text=korean_time_string)
+
+    # 매 초 라벨을 업데이트하는 대신, 1분마다 업데이트하도록 변경
+    if current_time_label.cget("text") != korean_time_string:
+        current_time_label.config(text=korean_time_string)
     window.after(1000, update_current_time)
 
 
@@ -266,7 +277,7 @@ window.title("Pomodoro")
 icon_data_decoded = base64.b64decode(TOMATO_ICO)
 icon_photo = tkinter.PhotoImage(data=icon_data_decoded)
 window.iconphoto(True, icon_photo)
-window.config(padx=30, pady=20, bg=YELLOW)
+window.config(padx=10, pady=10, bg=YELLOW)
 
 # --- 상단 정보 (날씨, 날짜, 시간) ---
 header_frame = tkinter.Frame(window, bg=YELLOW)
@@ -321,7 +332,7 @@ timer_text_outline_e = canvas.create_text(
 timer_text_main = canvas.create_text(
     100, 170, text="00:00", fill="white", font=(FONT_NAME, 35, "bold")
 )
-canvas.grid(column=0, row=2, columnspan=3, pady=15)
+canvas.grid(column=0, row=2, columnspan=3, pady=5)
 
 # --- 볼륨 컨트롤 슬라이더 ---
 volume_scale = tkinter.Scale(
@@ -334,7 +345,7 @@ volume_scale = tkinter.Scale(
     command=set_volume,
 )
 volume_scale.set(25)
-volume_scale.grid(column=0, row=3, columnspan=3, padx=12, pady=(0, 6), sticky="ew")
+volume_scale.grid(column=0, row=3, columnspan=3, padx=18, pady=(0, 6), sticky="ew")
 
 # --- 시작/리셋 버튼 ---
 start_button = tkinter.Button(
