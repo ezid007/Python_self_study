@@ -203,9 +203,9 @@ def update_current_time():
 
 window = tkinter.Tk()  # 메인 윈도우(창) 객체를 생성합니다.
 window.title("Pomodoro")  # 창의 제목을 설정합니다.
-window.iconbitmap(
-    "C:\\Users\\ye\\Documents\\study\\python\\self_study\\Day_27_257_the_pomodoro_technique\\tomato.ico"
-)
+# window.iconbitmap(
+#     "C:\\Users\\ye\\Documents\\study\\python\\self_study\\Day_27_257_the_pomodoro_technique\\tomato.ico"
+# )
 window.config(padx=10, pady=10, bg=YELLOW)  # 창의 속성(내부 여백, 배경색)을 설정합니다.
 
 # --- 현재 시간 표시 라벨 ---
@@ -266,7 +266,6 @@ volume_scale.set(25)
 volume_scale.grid(column=1, row=2, pady=10)
 
 # --- 시작/리셋 버튼 ---
-# [수정] 버튼 디자인을 개선합니다.
 start_button = tkinter.Button(
     text="Start",
     font=(FONT_NAME, 12, "bold"),
