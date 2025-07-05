@@ -3,6 +3,7 @@ Day_27_257_the_pomodoro_technique/pomodoro_pygame.mixer_main.spec
 __pycache__/
 *.py[cod]
 *.pyo
+pomodoro_weather.py
 
 # 가상환경
 venv/
