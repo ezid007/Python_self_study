@@ -1,0 +1,25 @@
+Day_27_257_the_pomodoro_technique/pomodoro_pygame.mixer_main.spec
+# Python 기본
+__pycache__/
+*.py[cod]
+*.pyo
+
+# 가상환경
+venv/
+env/
+
+# PyInstaller output
+build/
+dist/
+*.spec
+
+# 아이콘 등 바꾸고 싶은 항목
+*.ico
+
+# IDE 환경
+.vscode/
+.idea/
+
+# 기타
+*.log
+*.tmp
