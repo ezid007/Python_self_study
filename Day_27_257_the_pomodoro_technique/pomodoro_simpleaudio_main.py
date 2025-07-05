@@ -1,27 +1,11 @@
-"""
-Pomodoro Technique Timer (Main Logic)
-이 프로그램은 Tkinter를 사용하여 만든 간단한 뽀모도로 타이머 애플리케이션입니다.
-데이터는 code_data.py에서 가져오고, 여기서는 프로그램의 핵심 로직만 처리합니다.
-[수정] 이미지 핸들링 안정성을 개선하고, 오류 처리 방식을 개선했습니다.
-"""
-
+from code_data import IMG_DATA, SOUND_DATA
 import tkinter
-import tkinter.messagebox
 import math
 import base64
 import simpleaudio as sa
+import wave
 import io
 
-# [수정] code_data 파일에서 이미지 및 사운드 데이터를 가져옵니다.
-try:
-    from code_data import IMG_DATA, SOUND_DATA
-except ImportError:
-    # [수정] 파일이 없을 경우, 사용자에게 오류 메시지 창을 띄우고 프로그램을 종료합니다.
-    tkinter.messagebox.showerror(
-        "파일 없음 오류",
-        "'code_data.py' 파일을 찾을 수 없습니다. 두 파일이 같은 폴더에 있는지 확인하세요.",
-    )
-    exit()  # 프로그램 종료
 
 # ---------------------------- 상수 (CONSTANTS) ------------------------------- #
 PINK = "#e2979c"
@@ -42,43 +26,57 @@ wave_obj = None
 
 
 def _load_wave_obj():
-    global wave_obj
-    if wave_obj is None:
-        try:
-            decoded_audio_data = base64.b64decode(SOUND_DATA)
-            wave_obj = sa.WaveObject.from_wave_file(io.BytesIO(decoded_audio_data))
-        except Exception as e:
-            print(f"오디오 데이터 로딩 오류: {e}")
-            wave_obj = "failed"
-    return wave_obj if wave_obj != "failed" else None
+    try:
+        decoded_audio_data = base64.b64decode(SOUND_DATA)
+        byte_stream = io.BytesIO(decoded_audio_data)
+        wave_read = wave.open(byte_stream, "rb")
+        return sa.WaveObject.from_wave_read(wave_read)
+    except Exception as e:
+        print(f"오디오 데이터 로딩 오류: {e}")
+        return None
 
 
 def start_sound_loop():
     global play_obj, sound_check_id
+
     stop_sound_loop()
 
-    if _load_wave_obj() is None:
+    wave_obj = _load_wave_obj()
+    if wave_obj is None:
         return
 
     def loop_check():
         global play_obj, sound_check_id
-        if not play_obj or not play_obj.is_playing():
-            play_obj = wave_obj.play()
-        # [수정] window 객체를 명시적으로 사용하여 after 메소드를 호출합니다.
-        sound_check_id = window.after(500, loop_check)
+
+        try:
+            if not play_obj or not play_obj.is_playing():
+                wave_obj = _load_wave_obj()
+                if wave_obj:
+                    play_obj = wave_obj.play()
+            sound_check_id = window.after(500, loop_check)
+        except Exception as e:
+            print(f"사운드 루프 오류: {e}")
+            stop_sound_loop()
 
     loop_check()
 
 
 def stop_sound_loop():
     global play_obj, sound_check_id
-    if sound_check_id:
-        # [수정] window 객체를 명시적으로 사용하여 after_cancel을 호출합니다.
-        window.after_cancel(sound_check_id)
-        sound_check_id = None
-    if play_obj and play_obj.is_playing():
-        play_obj.stop()
+    try:
+        if sound_check_id:
+            window.after_cancel(sound_check_id)
+            sound_check_id = None
+        if play_obj:
+            try:
+                if play_obj.is_playing():
+                    play_obj.stop()
+            except Exception as e:
+                print(f"사운드 종료 시 play_obj 오류: {e}")
         play_obj = None
+    except Exception as e:
+        print(f"사운드 정지 중 오류: {e}")
+
 
 
 # ---------------------------- 타이머 리셋 (TIMER RESET) ------------------------------- #
@@ -146,8 +144,6 @@ title_label.grid(column=1, row=0)
 canvas = tkinter.Canvas(width=200, height=224, bg=YELLOW, highlightthickness=0)
 photo = tkinter.PhotoImage(data=IMG_DATA)
 
-# [핵심 수정] 생성된 이미지 객체(photo)가 사라지지 않도록 canvas 위젯에 대한 참조로 저장합니다.
-# 이렇게 하면 파이썬의 가비지 컬렉터가 이미지를 임의로 삭제하는 것을 방지하여 프로그램 충돌을 막습니다.
 canvas.photo = photo
 
 canvas.create_image(100, 112, image=photo)
