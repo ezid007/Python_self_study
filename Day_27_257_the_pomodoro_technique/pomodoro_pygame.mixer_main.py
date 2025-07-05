@@ -203,9 +203,9 @@ def update_current_time():
 
 window = tkinter.Tk()  # 메인 윈도우(창) 객체를 생성합니다.
 window.title("Pomodoro")  # 창의 제목을 설정합니다.
-# window.iconbitmap(
-#     "C:\\Users\\ye\\Documents\\study\\python\\self_study\\Day_27_257_the_pomodoro_technique\\tomato.ico"
-# )
+window.iconbitmap(
+    "C:\\Users\\ye\\Documents\\study\\python\\self_study\\Day_27_257_the_pomodoro_technique\\tomato.ico"
+)
 window.config(padx=10, pady=10, bg=YELLOW)  # 창의 속성(내부 여백, 배경색)을 설정합니다.
 
 # --- 현재 시간 표시 라벨 ---
@@ -248,7 +248,7 @@ timer_text_main = canvas.create_text(
 )
 
 check_marks_text = canvas.create_text(
-    100, 190, text="", fill=GREEN, font=(FONT_NAME, 20, "bold")
+    100, 210, text="", fill=GREEN, font=(FONT_NAME, 20, "bold")
 )
 canvas.grid(column=1, row=1)
 
