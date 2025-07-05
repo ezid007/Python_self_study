@@ -1,6 +1,8 @@
 from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox
+import random
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
+
 
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 
