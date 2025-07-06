@@ -1,7 +1,88 @@
 from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox
 import random
 
+
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
+def generate_password():
+    """랜덤 비밀번호를 생성하고 입력 필드에 삽입하며 클립보드에 복사합니다."""
+    letters = [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j",
+        "k",
+        "l",
+        "m",
+        "n",
+        "o",
+        "p",
+        "q",
+        "r",
+        "s",
+        "t",
+        "u",
+        "v",
+        "w",
+        "x",
+        "y",
+        "z",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "U",
+        "V",
+        "W",
+        "X",
+        "Y",
+        "Z",
+    ]
+    numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    symbols = ["!", "#", "$", "%", "&", "(", ")", "*", "+"]
+
+    # 리스트 컴프리헨션을 사용하여 각 종류의 문자를 랜덤하게 선택
+    password_letters = [random.choice(letters) for _ in range(random.randint(8, 10))]
+    password_symbols = [random.choice(symbols) for _ in range(random.randint(2, 4))]
+    password_numbers = [random.choice(numbers) for _ in range(random.randint(2, 4))]
+
+    # 선택된 문자들을 하나의 리스트로 합침
+    password_list = password_letters + password_symbols + password_numbers
+    # 리스트의 순서를 섞어 예측 불가능하게 만듦
+    random.shuffle(password_list)
+
+    # 리스트를 문자열로 변환
+    password = "".join(password_list)
+
+    # 비밀번호 입력 필드를 비우고 생성된 비밀번호를 삽입
+    password_entry.delete(0, END)
+    password_entry.insert(0, password)
+
+    # 생성된 비밀번호를 클립보드에 복사하여 바로 붙여넣기 할 수 있도록 함
+    window.clipboard_clear()
+    window.clipboard_append(password)
+    messagebox.showinfo(title="알림", message="비밀번호가 클립보드에 복사되었습니다!")
 
 
 # ---------------------------- SAVE PASSWORD ------------------------------- #
