@@ -34,7 +34,7 @@ SHORT_BREAK_MIN = 5
 LONG_BREAK_MIN = 20
 
 # --- 기상청 API 관련 상수 ---
-KMA_API_KEY = "Qm%2BeM3tI2A%2FndGQSlFsYDJhFeHx7FfFLbfNGSRzxNzEtemy3O%2BK4pncX%2FbgykEhQEmr%2FLhQP7aLBXctq6vbznw%3D%3D"
+KMA_API_KEY ="당신의 키 값"
 
 # 주요 도시 이름과 기상청 격자 좌표(X, Y) 매핑
 CITY_GRID_COORDS = {
