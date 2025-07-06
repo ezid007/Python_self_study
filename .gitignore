@@ -13,6 +13,7 @@ env/
 # PyInstaller output
 build/
 dist/
+exe_file/
 *.spec
 
 # 아이콘 등 바꾸고 싶은 항목
