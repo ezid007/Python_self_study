@@ -1,164 +1,187 @@
 from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox
 import random
+import json
+
+# ---------------------------- 상수 ------------------------------- #
+# 함수 밖으로 빼서 상수로 만들어 메모리 효율성 증대
+LETTERS = [
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "q",
+    "r",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+    "x",
+    "y",
+    "z",
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+]
+NUMBERS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+SYMBOLS = ["!", "#", "$", "%", "&", "(", ")", "*", "+"]
 
 
-# ---------------------------- PASSWORD GENERATOR ------------------------------- #
+# ---------------------------- 비밀번호 생성기 ------------------------------- #
 def generate_password():
     """랜덤 비밀번호를 생성하고 입력 필드에 삽입하며 클립보드에 복사합니다."""
-    letters = [
-        "a",
-        "b",
-        "c",
-        "d",
-        "e",
-        "f",
-        "g",
-        "h",
-        "i",
-        "j",
-        "k",
-        "l",
-        "m",
-        "n",
-        "o",
-        "p",
-        "q",
-        "r",
-        "s",
-        "t",
-        "u",
-        "v",
-        "w",
-        "x",
-        "y",
-        "z",
-        "A",
-        "B",
-        "C",
-        "D",
-        "E",
-        "F",
-        "G",
-        "H",
-        "I",
-        "J",
-        "K",
-        "L",
-        "M",
-        "N",
-        "O",
-        "P",
-        "Q",
-        "R",
-        "S",
-        "T",
-        "U",
-        "V",
-        "W",
-        "X",
-        "Y",
-        "Z",
-    ]
-    numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    symbols = ["!", "#", "$", "%", "&", "(", ")", "*", "+"]
+    password_letters = [random.choice(LETTERS) for _ in range(random.randint(8, 10))]
+    password_symbols = [random.choice(SYMBOLS) for _ in range(random.randint(2, 4))]
+    password_numbers = [random.choice(NUMBERS) for _ in range(random.randint(2, 4))]
 
-    # 리스트 컴프리헨션을 사용하여 각 종류의 문자를 랜덤하게 선택
-    password_letters = [random.choice(letters) for _ in range(random.randint(8, 10))]
-    password_symbols = [random.choice(symbols) for _ in range(random.randint(2, 4))]
-    password_numbers = [random.choice(numbers) for _ in range(random.randint(2, 4))]
-
-    # 선택된 문자들을 하나의 리스트로 합침
     password_list = password_letters + password_symbols + password_numbers
-    # 리스트의 순서를 섞어 예측 불가능하게 만듦
     random.shuffle(password_list)
 
-    # 리스트를 문자열로 변환
     password = "".join(password_list)
-
-    # 비밀번호 입력 필드를 비우고 생성된 비밀번호를 삽입
     password_entry.delete(0, END)
     password_entry.insert(0, password)
-
-    # 생성된 비밀번호를 클립보드에 복사하여 바로 붙여넣기 할 수 있도록 함
     window.clipboard_clear()
     window.clipboard_append(password)
     messagebox.showinfo(title="알림", message="비밀번호가 클립보드에 복사되었습니다!")
 
 
-# ---------------------------- SAVE PASSWORD ------------------------------- #
+# ---------------------------- 비밀번호 검색 ------------------------------- #
+def find_password():
+    """JSON 파일에서 웹사이트를 검색하여 정보를 보여줍니다."""
+    website = website_entry.get()
+    try:
+        with open("self_study/Day_28_264_password_manager/data.json", "r") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title="오류", message="저장된 데이터 파일이 없습니다.")
+    else:
+        if website in data:
+            email = data[website]["email"]
+            password = data[website]["password"]
+            messagebox.showinfo(
+                title=website, message=f"이메일: {email}\n비밀번호: {password}"
+            )
+        else:
+            messagebox.showinfo(
+                title="오류", message=f"'{website}'에 대한 정보를 찾을 수 없습니다."
+            )
 
 
+# ---------------------------- 비밀번호 저장 ------------------------------- #
 def save():
+    """입력된 데이터를 JSON 파일에 저장합니다."""
     website = website_entry.get()
     email = email_entry.get()
     password = password_entry.get()
+    new_data = {
+        website: {
+            "email": email,
+            "password": password,
+        }
+    }
+
+    # 더 간결하고 파이썬다운 방식의 유효성 검사
+    if not website or not password:
+        messagebox.showinfo(
+            title="Oops", message="비어있는 칸이 있습니다. 확인해주세요."
+        )
+        return
 
     is_ok = messagebox.askokcancel(
         website,
-        f"These are the details entered:\nEmail: {email}\nPassword: {password}\nIs it ok to save?",
+        f"입력하신 정보는 다음과 같습니다:\n이메일: {email}\n비밀번호: {password}\n저장하시겠습니까?",
     )
 
     if is_ok:
-        with open(
-            "self_study/Day_28_264_password_manager/data.txt", "a", encoding="utf-8"
-        ) as data_file:
-            data_file.write(f"{website} | {email} | {password}\n")
+        try:
+            with open("data.json", "r") as data_file:
+                # 1. 기존 데이터 읽기
+                data = json.load(data_file)
+        except FileNotFoundError:
+            # 2. 파일이 없으면, 쓰기 모드로 파일 생성
+            with open("data.json", "w") as data_file:
+                json.dump(new_data, data_file, indent=4)
+        else:
+            # 3. 기존 데이터에 새로운 정보 추가
+            data.update(new_data)
+            with open("data.json", "w") as data_file:
+                # 4. 업데이트된 전체 데이터 저장
+                json.dump(data, data_file, indent=4)
+        finally:
             website_entry.delete(0, END)
             password_entry.delete(0, END)
 
 
-# ---------------------------- UI SETUP ------------------------------- #
-
-
+# ---------------------------- UI 설정 ------------------------------- #
 window = Tk()
-window.title("Password Manager")
-# 창 전체에 좌우 50, 상하 20의 여백을 줍니다.
+window.title("비밀번호 관리자")
 window.config(padx=50, pady=50)
 
-
 canvas = Canvas(height=200, width=200, highlightthickness=0)
-logo_img = PhotoImage(file="self_study/Day_28_264_password_manager/logo.png")
-canvas.create_image(100, 100, image=logo_img)
-# 로고 이미지를 0행 1열에 배치합니다.
-canvas.grid(
-    row=0, column=1, pady=(0, 20)
-)  # 이미지와 라벨 글씨 사이의 여백을 추가합니다.
+try:
+    logo_img = PhotoImage(file="self_study/Day_28_264_password_manager/logo.png")
+    canvas.create_image(100, 100, image=logo_img)
+except Exception:
+    canvas.create_text(100, 100, text="LOGO", font=("Arial", 50))
+canvas.grid(row=0, column=1)
 
-# --- Labels ---
-# 레이블들을 모두 0열에 배치하고, 오른쪽 정렬(sticky="e")하여 깔끔하게 맞춥니다.
-website_label = Label(text="Website:")
-website_label.grid(row=1, column=0, sticky="e")
+# --- 위젯 ---
+website_label = Label(text="웹사이트:")
+website_label.grid(row=1, column=0, sticky="w")
+email_label = Label(text="이메일/사용자명:")
+email_label.grid(row=2, column=0, sticky="w")
+password_label = Label(text="비밀번호:")
+password_label.grid(row=3, column=0, sticky="w")
 
-email_label = Label(text="Email/Username:")
-email_label.grid(row=2, column=0, sticky="e")
-
-password_label = Label(text="Password:")
-password_label.grid(row=3, column=0, sticky="e")
-
-# --- Entries ---
-# 입력 필드들을 1열에 배치하고, 가로로 꽉 채우도록(sticky="ew") 설정합니다.
 website_entry = Entry()
-# 1열과 2열을 병합(columnspan=2)하고, 가로로 꽉 채웁니다(sticky="ew").
-website_entry.grid(row=1, column=1, columnspan=2, sticky="ew", padx=5)
-website_entry.focus()  # 프로그램 시작 시 커서를 여기에 둡니다.
-
+website_entry.grid(row=1, column=1, sticky="ew")
+website_entry.focus()
 email_entry = Entry()
-email_entry.grid(row=2, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
+email_entry.grid(row=2, column=1, columnspan=2, sticky="ew")
 email_entry.insert(0, "asdf@gmail.com")
-
 password_entry = Entry()
-# 1열에만 배치하고 가로로 채웁니다.
-password_entry.grid(row=3, column=1, sticky="ew", padx=5)
+password_entry.grid(row=3, column=1, sticky="ew")
 
-# --- Buttons ---
-# 버튼들도 가로로 꽉 채워(sticky="ew") 균형을 맞춥니다.
-generate_password_button = Button(text="Generate Password")
-# 2열에 배치하고 가로로 채웁니다.
-generate_password_button.grid(row=3, column=2, sticky="ew", padx=(5, 0))
-
-add_button = Button(text="Add", width=36, command=save)
-# 1열과 2열을 병합하고 가로로 채웁니다.
-add_button.grid(row=4, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
-
+search_button = Button(text="검색", command=find_password)
+search_button.grid(row=1, column=2, sticky="ew")
+generate_password_button = Button(text="비밀번호 생성", command=generate_password)
+generate_password_button.grid(row=3, column=2, sticky="ew")
+add_button = Button(text="추가", command=save)
+add_button.grid(row=4, column=1, columnspan=2, sticky="ew")
 
 window.mainloop()
