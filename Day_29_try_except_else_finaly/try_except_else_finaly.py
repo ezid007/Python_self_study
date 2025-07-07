@@ -1,38 +1,19 @@
-from rich import print
-import traceback
+def c_withdraw(balance, amount):
+    if amount > balance:
+        return None, "잔액 부족" # 오류 메시지를 함께 반환
+    return balance - amount, "성공"
 
+def b_buy_item(cash, item_price):
+    new_balance, msg = c_withdraw(cash, item_price)
+    if new_balance is None:
+        # 오류를 다시 상위로 전달... 매우 번거롭다.
+        return None, msg 
+    return new_balance, "구매 성공"
 
-def function_a():
-    print("function_a가 function_b를 호출합니다.")
-    function_b()
-    print("function_a가 종료됩니다.")
+def a_start_shopping():
+    final_result, final_msg = b_buy_item(50000, 100000)
+    if final_result is None:
+        # 맨 위에서야 겨우 오류를 처리한다.
+        print(f"쇼핑 실패! 이유: {final_msg}")
 
-
-def function_b():
-    print("function_b가 function_c를 호출합니다.")
-    function_c()
-    print("function_b가 종료됩니다.")
-
-
-def function_c():
-    print("function_c에서 오류를 발생시킵니다.")
-    # 여기서 ZeroDivisionError 발생!
-    result = 10 / 0
-    return result
-
-
-# 메인 코드
-try:
-    function_a()
-
-except Exception:
-    # 에러가 발생하면 상세 내용을 문자열로 가져와 출력
-    error_details = traceback.format_exc()
-    print("\n--- 에러 발생! 상세 정보 ---")
-    print(error_details)
-    print("--------------------------")
-    # 이 정보를 파일에 기록하여 에러 로그를 만들 수 있습니다.
-    # with open("error_log.txt", "a") as f:
-    #     f.write(error_details + "\n")
-
-print("프로그램이 정상적으로 종료되었습니다.")
+a_start_shopping()
