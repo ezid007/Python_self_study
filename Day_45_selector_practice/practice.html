@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CSS 선택자 실습 페이지</title>
+        <style>
+            /* 간단한 스타일링으로 구조를 보기 쉽게 합니다 */
+            body {
+                font-family: sans-serif;
+                line-height: 1.6;
+                padding: 20px;
+            }
+            div {
+                border: 1px solid #ccc;
+                padding: 15px;
+                margin-top: 15px;
+                border-radius: 8px;
+            }
+            .highlight {
+                background-color: #fffbe6;
+            }
+        </style>
+    </head>
+    <body>
+        <header id="main-header">
+            <h1 class="title main-title">CSS 선택자 실습</h1>
+            <p>이 페이지는 CSS 선택자 실습을 위해 만들어졌습니다.</p>
+        </header>
+
+        <div id="content-area" class="section">
+            <h2 class="title sub-title">기사 목록</h2>
+            <p>아래는 다양한 기사 목록입니다.</p>
+
+            <ul id="article-list">
+                <li class="article-item" data-category="news">
+                    첫 번째 기사
+                    <a href="/news/1">보기</a>
+                </li>
+                <li class="article-item special" data-category="tech">
+                    두 번째 기사 (특별)
+                    <a href="/tech/2">보기</a>
+                </li>
+                <li class="article-item" data-category="sports">
+                    세 번째 기사
+                    <a href="/sports/3">보기</a>
+                </li>
+                <li class="article-item disabled" data-category="news">
+                    네 번째 기사 (비활성)
+                </li>
+            </ul>
+
+            <a href="/about" title="회사 소개 페이지">회사 소개</a>
+        </div>
+
+        <div id="login-form-area" class="section">
+            <h2 class="title sub-title">로그인</h2>
+            <form action="/login" method="post">
+                <div class="input-group">
+                    <label for="username">아이디</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="아이디를 입력하세요"
+                    />
+                </div>
+                <div class="input-group">
+                    <label for="password">비밀번호</label>
+                    <input type="password" id="password" name="password" />
+                </div>
+                <div class="input-group checkbox-group">
+                    <input
+                        type="checkbox"
+                        id="remember-me"
+                        name="remember"
+                        value="yes"
+                    />
+                    <label for="remember-me">아이디 기억하기</label>
+                </div>
+                <button type="submit" class="btn submit-btn">로그인</button>
+                <button type="button" class="btn">취소</button>
+            </form>
+        </div>
+    </body>
+</html>
