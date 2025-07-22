@@ -6,6 +6,7 @@ __pycache__/
 *.pyo
 *.zip
 *.env
+*.csv
 pomodoro_weather.py
 
 # 가상환경
