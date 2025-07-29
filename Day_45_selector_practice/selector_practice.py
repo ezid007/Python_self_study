@@ -31,7 +31,7 @@ with webdriver.Chrome(service=Service(ChromeDriverManager().install())) as drive
     # 현재 파이썬 파일의 위치를 기준으로 practice.html 파일의 절대 경로를 계산합니다.
     # 이렇게 하면 어떤 컴퓨터에서 실행해도 파일 경로가 올바르게 설정됩니다.
     html_file_path = (
-        Path(__file__).parent / "self_study/Day_45_selector_practice/practice.html"
+        Path(__file__).parent / "practice.html"
     )
 
     # 로컬 HTML 파일을 엽니다. 'file://' 프로토콜을 사용합니다.
