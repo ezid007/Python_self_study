@@ -11,6 +11,7 @@ pomodoro_weather.py
 *.db
 *.sql
 *.mwb
+*.png
 
 # 가상환경
 venv/
