@@ -15,7 +15,6 @@ def home():
 
 @app.route("/guess/<name>")
 def guess(name):
-    # 'qenderize.io'를 'genderize.io'로 수정했습니다.
     gender_url = f"https://api.genderize.io?name={name}"
     gender_response = requests.get(gender_url)
     gender_data = gender_response.json()
@@ -25,6 +24,14 @@ def guess(name):
     age_data = age_response.json()
     age = age_data["age"]
     return render_template("guess.html", person_name=name, gender=gender, age=age)
+
+
+@app.route("/blog")
+def blog():
+    blog_url = "https://api.npoint.io/047d9103b9753018c36b"
+    response = requests.get(blog_url)
+    all_posts = response.json()
+    return render_template("blog.html", posts=all_posts)
 
 
 if __name__ == "__main__":
