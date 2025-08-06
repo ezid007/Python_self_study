@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>FullCalendar 날씨 및 DB 연동</title>
+        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+        <style>
+            /* 기본 스타일링 */
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                    Roboto, "Helvetica Neue", Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background-color: #f4f7f6;
+            }
+            #calendar-container {
+                max-width: 1100px;
+                margin: 0 auto;
+                background-color: white;
+                padding: 25px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            }
+            /* 오늘 날짜 하이라이트 스타일 */
+            .fc-day-today {
+                background-color: #eaf6ff !important;
+            }
+
+            /* --- 🌦️ 날씨 정보 스타일 --- */
+            .weather-info {
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                background-color: rgba(0, 0, 0, 0.05);
+                padding: 2px 4px;
+                border-radius: 4px;
+            }
+            .weather-info img {
+                width: 25px;
+                height: 25px;
+                margin-right: 3px;
+            }
+            .weather-temp {
+                font-weight: 500;
+                color: #333;
+            }
+            /* 날짜와 날씨 정보를 양쪽 끝으로 정렬 */
+            .fc .fc-daygrid-day-top {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="calendar-container">
+            <div id="calendar"></div>
+        </div>
+
+        <script>
+            // ❗️ [수정] : DOMContentLoaded 이벤트 리스너를 async 함수로 변경
+            document.addEventListener("DOMContentLoaded", async function () {
+                // --- 🌦️ 날씨 API 설정 (다시 추가) ---
+                const WEATHER_API_KEY = "267eadf59c4e47894ad2da87ede2f4c5"; // 여기에 실제 API 키를 입력하세요.
+                let weatherData = new Map();
+
+                /**
+                 * 위도와 경도를 기반으로 5일치 날씨 예보 정보를 가져오는 함수
+                 */
+                async function fetchWeather(lat, lon) {
+                    if (
+                        WEATHER_API_KEY === "YOUR_API_KEY" ||
+                        !WEATHER_API_KEY
+                    ) {
+                        console.warn(
+                            "OpenWeatherMap API 키가 설정되지 않았습니다."
+                        );
+                        return;
+                    }
+                    const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric&lang=kr`;
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            throw new Error(
+                                `날씨 정보 로딩 실패: ${response.status}`
+                            );
+                        }
+                        const data = await response.json();
+                        const dailyForecasts = {};
+                        data.list.forEach((item) => {
+                            const date = item.dt_txt.slice(0, 10);
+                            if (!dailyForecasts[date])
+                                dailyForecasts[date] = [];
+                            dailyForecasts[date].push(item);
+                        });
+
+                        Object.keys(dailyForecasts).forEach((date) => {
+                            let closestForecast = dailyForecasts[date].reduce(
+                                (prev, curr) =>
+                                    Math.abs(
+                                        new Date(curr.dt_txt).getUTCHours() - 12
+                                    ) <
+                                    Math.abs(
+                                        new Date(prev.dt_txt).getUTCHours() - 12
+                                    )
+                                        ? curr
+                                        : prev
+                            );
+                            weatherData.set(date, {
+                                temp: closestForecast.main.temp,
+                                icon: closestForecast.weather[0].icon,
+                                description:
+                                    closestForecast.weather[0].description,
+                            });
+                        });
+                    } catch (error) {
+                        console.error("날씨 API 처리 중 오류:", error);
+                    }
+                }
+
+                /**
+                 * 사용자의 현재 위치를 가져오는 함수
+                 */
+                function getCurrentLocation() {
+                    return new Promise((resolve) => {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) =>
+                                resolve({
+                                    lat: position.coords.latitude,
+                                    lon: position.coords.longitude,
+                                }),
+                            () => resolve({ lat: 37.42, lon: 127.1269 }) // 위치 정보 실패 시 기본 위치 (성남시)
+                        );
+                    });
+                }
+
+                // ❗️ [수정] : 캘린더 렌더링 전 날씨 데이터를 먼저 불러옵니다.
+                const location = await getCurrentLocation();
+                await fetchWeather(location.lat, location.lon);
+
+                // --- 캘린더 초기화 및 렌더링 ---
+                var calendarEl = document.getElementById("calendar");
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: "dayGridMonth",
+                    locale: "ko",
+                    headerToolbar: {
+                        left: "prev,next today",
+                        center: "title",
+                        right: "dayGridMonth,timeGridWeek,timeGridDay",
+                    },
+                    editable: true,
+                    selectable: true,
+
+                    // 💾 [DB 연동] : 서버에서 일정 불러오기
+                    events: "/get_events",
+
+                    // 🌦️ [날씨 기능] : 날짜 셀에 날씨 정보 렌더링 (다시 추가)
+                    dayCellContent: function (arg) {
+                        const dateStr = arg.date.toISOString().slice(0, 10);
+                        const weather = weatherData.get(dateStr);
+                        let weatherHtml = "";
+
+                        if (weather) {
+                            weatherHtml = `
+                            <div class="weather-info" title="${
+                                weather.description
+                            }">
+                                <img src="https://openweathermap.org/img/wn/${
+                                    weather.icon
+                                }.png" alt="${weather.description}">
+                                <span class="weather-temp">${Math.round(
+                                    weather.temp
+                                )}°</span>
+                            </div>`;
+                        }
+                        return {
+                            html: `<a class="fc-daygrid-day-number">${arg.dayNumberText.replace(
+                                "일",
+                                ""
+                            )}</a>${weatherHtml}`,
+                        };
+                    },
+
+                    // 💾 [DB 연동] : 새 일정 추가
+                    dateClick: function (info) {
+                        const eventName = prompt(
+                            `'${info.dateStr}'에 추가할 일정명을 입력하세요:`
+                        );
+                        if (eventName) {
+                            const newEvent = {
+                                title: eventName,
+                                start: info.dateStr,
+                                allDay: true,
+                                color:
+                                    "#" +
+                                    Math.round(Math.random() * 0xffffff)
+                                        .toString(16)
+                                        .padStart(6, "0"),
+                            };
+                            fetch("/add_event", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(newEvent),
+                            })
+                                .then((res) => res.json())
+                                .then((data) => {
+                                    if (data.status === "success") {
+                                        calendar.addEvent({
+                                            ...newEvent,
+                                            id: data.id,
+                                        });
+                                    } else {
+                                        alert(
+                                            "일정 추가 실패: " + data.message
+                                        );
+                                    }
+                                });
+                        }
+                    },
+
+                    // 💾 [DB 연동] : 기존 일정 삭제
+                    eventClick: function (info) {
+                        if (
+                            confirm(
+                                `'${info.event.title}' 일정을 삭제하시겠습니까?`
+                            )
+                        ) {
+                            fetch("/delete_event", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ id: info.event.id }),
+                            })
+                                .then((res) => res.json())
+                                .then((data) => {
+                                    if (data.status === "success") {
+                                        info.event.remove();
+                                    } else {
+                                        alert(
+                                            "일정 삭제 실패: " + data.message
+                                        );
+                                    }
+                                });
+                        }
+                    },
+
+                    // 💾 [DB 연동] : 드래그 앤 드롭으로 일정 수정
+                    eventDrop: function (info) {
+                        const updatedEvent = {
+                            id: info.event.id,
+                            start: info.event.startStr,
+                            end: info.event.end ? info.event.endStr : null,
+                        };
+                        fetch("/update_event", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(updatedEvent),
+                        })
+                            .then((res) => res.json())
+                            .then((data) => {
+                                if (data.status !== "success") {
+                                    alert("일정 수정 실패: " + data.message);
+                                    info.revert();
+                                }
+                            });
+                    },
+                });
+
+                calendar.render();
+            });
+        </script>
+    </body>
+</html>
